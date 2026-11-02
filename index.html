@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#28685f">
+<meta name="description" content="思いついた生活改善タスクをためて、優先順位をつけて実行する自分専用アプリ">
+<link rel="manifest" href="manifest.json">
+<title>生活改善タスク</title>
+<style>
+:root{--green:#28685f;--pale:#e8f3f0;--ink:#20312e;--muted:#63736f;--line:#dce6e3;--bg:#f5f8f7;--white:#fff;--red:#a33d36}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+header{background:var(--green);color:white;padding:22px 18px 20px}header h1{margin:0;font-size:1.45rem}header p{margin:7px 0 0;font-size:.9rem;opacity:.9}
+main{max-width:760px;margin:auto;padding:16px 14px 40px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.stat,.panel,.task{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:14px}.stat span{display:block;color:var(--muted);font-size:.83rem}.stat strong{display:block;font-size:1.6rem;margin-top:2px}
+h2{font-size:1.08rem;margin:22px 2px 10px}.panel{margin-bottom:14px}.field{margin-bottom:12px}.field label{display:block;font-weight:650;font-size:.9rem;margin-bottom:6px}input[type=text],textarea,select,input[type=number]{width:100%;padding:11px 12px;border:1px solid #cbd8d4;border-radius:9px;background:white;color:var(--ink);font:inherit}textarea{resize:vertical;min-height:66px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+button{border:0;border-radius:9px;padding:11px 14px;font:inherit;font-weight:650;cursor:pointer}.primary{background:var(--green);color:white;width:100%}.secondary{background:var(--pale);color:var(--green)}.danger{background:#fae9e7;color:var(--red)}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.toolbar button{font-size:.88rem}
+.task{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px}.task input[type=checkbox]{width:21px;height:21px;margin-top:3px;accent-color:var(--green);flex-shrink:0}.taskbody{min-width:0;flex:1}.tasktitle{font-weight:700;overflow-wrap:anywhere}.taskmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.pill{background:var(--pale);color:var(--green);border-radius:99px;padding:3px 8px;font-size:.78rem}.score{font-weight:800;color:var(--green)}.notes{font-size:.88rem;color:var(--muted);white-space:pre-wrap;margin-top:7px}.taskactions{display:flex;gap:6px;margin-top:9px}.taskactions button{padding:6px 9px;font-size:.8rem}.empty{color:var(--muted);text-align:center;padding:22px 10px}.hidden{display:none!important}footer{color:var(--muted);font-size:.78rem;text-align:center;padding:12px 4px}.notice{font-size:.83rem;background:#fff7dd;border:1px solid #f0df9f;border-radius:10px;padding:11px;margin-bottom:14px}
+@media(min-width:600px){header{padding-left:max(18px,calc((100% - 730px)/2));padding-right:max(18px,calc((100% - 730px)/2))}main{padding-top:22px}.panel{padding:18px}}
+</style>
+</head>
+<body>
+<header><h1>🌿 生活改善タスク</h1><p>思いつきをためて、効果の高いものから実行する</p></header>
+<main>
+<div class="notice">データはこのブラウザ内に保存されます。ブラウザのデータ消去や端末変更に備え、定期的にバックアップしてください。</div>
+<div class="stats"><div class="stat"><span>未完了タスク</span><strong id="openCount">0</strong></div><div class="stat"><span>完了タスク</span><strong id="doneCount">0</strong></div></div>
+<h2 id="formHeading">＋ タスクを追加</h2>
+<form id="taskForm" class="panel">
+<input id="editId" type="hidden">
+<div class="field"><label for="taskName">タスク名 *</label><input id="taskName" type="text" maxlength="160" placeholder="例：台所の配置を改善する" required></div>
+<div class="field"><label for="taskNotes">メモ（任意）</label><textarea id="taskNotes" placeholder="気づいたこと、次にすることなど"></textarea></div>
+<div class="two">
+<div class="field"><label for="priority">優先度（1〜5）</label><select id="priority"><option value="1">1 - 低い</option><option value="2">2</option><option value="3" selected>3 - 普通</option><option value="4">4</option><option value="5">5 - 高い</option></select></div>
+<div class="field"><label for="difficulty">大変さ（1〜5）</label><select id="difficulty"><option value="1">1 - 楽</option><option value="2">2</option><option value="3" selected>3 - 普通</option><option value="4">4</option><option value="5">5 - 大変</option></select></div>
+</div>
+<p class="hint">スコア ＝ 優先度 × 優先度 ÷ 大変さ（高い順に表示）</p>
+<div class="toolbar"><button class="primary" type="submit" id="saveBtn">タスクを追加</button><button class="secondary hidden" type="button" id="cancelEdit">編集をキャンセル</button></div>
+</form>
+<h2>これからやること</h2>
+<div class="toolbar"><button class="secondary" id="sortScore">スコア順</button><button class="secondary" id="sortNewest">新しい順</button></div>
+<div id="openTasks"></div>
+<h2>完了履歴</h2>
+<div class="toolbar"><button class="secondary" id="toggleHistory">完了履歴を表示</button></div>
+<div id="history" class="hidden"></div>
+<h2>データのバックアップ</h2>
+<div class="panel">
+<p class="hint">端末の故障・ブラウザのデータ消去に備え、JSONファイルとして保存できます。別端末に自動同期はされません。</p>
+<div class="toolbar"><button class="secondary" id="exportBtn">バックアップを書き出す</button><button class="secondary" id="importBtn">バックアップを読み込む</button><input class="hidden" id="importFile" type="file" accept=".json,application/json"></div>
+</div>
+<footer>生活改善タスク v1.0 · 個人用</footer>
+</main>
+<script>
+const KEY='lifeImprovementTasks.v1';
+let tasks=[], sortMode='score', showHistory=false;
+const $=id=>document.getElementById(id);
+function load(){try{tasks=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(tasks))tasks=[]}catch(e){tasks=[]}}
+function save(){localStorage.setItem(KEY,JSON.stringify(tasks));render()}
+function score(t){return t.priority*t.priority/t.difficulty}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dateText(v){if(!v)return '';return new Date(v).toLocaleDateString('ja-JP')}
+function taskHTML(t,done=false){return `<div class="task"><input type="checkbox" ${done?'checked':''} aria-label="${done?'未完了に戻す':'完了にする'}" onchange="toggleTask('${t.id}',this.checked)"><div class="taskbody"><div class="tasktitle">${esc(t.name)}</div><div class="taskmeta"><span class="pill">優先度 ${t.priority}/5</span><span class="pill">大変さ ${t.difficulty}/5</span><span class="score">スコア ${score(t).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}</span>${done?`<span class="pill">完了日 ${dateText(t.completedAt)}</span>`:''}</div>${t.notes?`<div class="notes">${esc(t.notes)}</div>`:''}<div class="taskactions">${done?`<button class="secondary" onclick="toggleTask('${t.id}',false)">未完了に戻す</button>`:`<button class="secondary" onclick="editTask('${t.id}')">編集</button>`}<button class="danger" onclick="deleteTask('${t.id}')">削除</button></div></div></div>`}
+function render(){const open=tasks.filter(t=>!t.completedAt);const done=tasks.filter(t=>t.completedAt).sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt));open.sort(sortMode==='score'?(a,b)=>score(b)-score(a)||new Date(b.createdAt)-new Date(a.createdAt):(a,b)=>new Date(b.createdAt)-new Date(a.createdAt));$('openCount').textContent=open.length;$('doneCount').textContent=done.length;$('openTasks').innerHTML=open.length?open.map(t=>taskHTML(t)).join(''):'<div class="empty">未完了タスクはありません。思いついたことを追加しましょう。</div>';$('history').innerHTML=done.length?done.map(t=>taskHTML(t,true)).join(''):'<div class="empty">完了履歴はまだありません。</div>';$('history').classList.toggle('hidden',!showHistory);$('toggleHistory').textContent=showHistory?'完了履歴を隠す':'完了履歴を表示';}
+$('taskForm').addEventListener('submit',e=>{e.preventDefault();const id=$('editId').value;const old=tasks.find(t=>t.id===id);const item={id:id||crypto.randomUUID(),name:$('taskName').value.trim(),notes:$('taskNotes').value.trim(),priority:Number($('priority').value),difficulty:Number($('difficulty').value),createdAt:old?.createdAt||new Date().toISOString(),completedAt:old?.completedAt||null};if(!item.name)return;if(old)tasks=tasks.map(t=>t.id===id?item:t);else tasks.push(item);resetForm();save()});
+function resetForm(){$('taskForm').reset();$('priority').value='3';$('difficulty').value='3';$('editId').value='';$('formHeading').textContent='＋ タスクを追加';$('saveBtn').textContent='タスクを追加';$('cancelEdit').classList.add('hidden')}
+window.editTask=id=>{const t=tasks.find(x=>x.id===id);if(!t)return;$('editId').value=t.id;$('taskName').value=t.name;$('taskNotes').value=t.notes||'';$('priority').value=t.priority;$('difficulty').value=t.difficulty;$('formHeading').textContent='タスクを編集';$('saveBtn').textContent='変更を保存';$('cancelEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})};
+$('cancelEdit').onclick=resetForm;
+window.toggleTask=(id,checked)=>{tasks=tasks.map(t=>t.id===id?{...t,completedAt:checked?new Date().toISOString():null}:t);save()};
+window.deleteTask=id=>{if(confirm('このタスクを完全に削除しますか？')){tasks=tasks.filter(t=>t.id!==id);save()}};
+$('sortScore').onclick=()=>{sortMode='score';render()};$('sortNewest').onclick=()=>{sortMode='newest';render()};$('toggleHistory').onclick=()=>{showHistory=!showHistory;render()};
+$('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),tasks},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='生活改善タスク_backup.json';a.click();URL.revokeObjectURL(a.href)};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());const incoming=Array.isArray(d)?d:d.tasks;if(!Array.isArray(incoming))throw Error();if(confirm('現在のタスクをバックアップの内容で置き換えますか？')){tasks=incoming;save();resetForm();alert('読み込みました')}}catch(err){alert('読み込めませんでした。有効なバックアップJSONを選んでください')}e.target.value=''};
+load();render();
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
