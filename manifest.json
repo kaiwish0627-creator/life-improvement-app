@@ -1,11 +1,11 @@
 {
-  "name": "生活改善タスク",
-  "short_name": "生活改善",
-  "description": "生活改善タスクを優先順位づけして管理する個人用アプリ",
+  "name": "Daily Quest",
+  "short_name": "Daily Quest",
+  "description": "Daily Quest",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f8f7",
-  "theme_color": "#28685f",
+  "background_color": "#F7FAFA",
+  "theme_color": "#39C5BB",
   "icons": []
 }
